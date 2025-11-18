@@ -94,12 +94,15 @@ file(GLOB         GLES2_PKG_SRC
     ${CMAKE_SOURCE_DIR}/VK-GL-CTS/modules/gles2/tes2*.cpp
     ${CMAKE_SOURCE_DIR}/VK-GL-CTS/framework/platform/tcuMain.cpp)
 
-# Minimal headless EGL platform to avoid Vulkan WSI/X11
+# Surfaceless EGL platform (real dynamic EGL/GLES loading) instead of null stub platform
 include_directories(
-    ${CMAKE_SOURCE_DIR}/VK-GL-CTS/framework/platform/null
+    ${CMAKE_SOURCE_DIR}/VK-GL-CTS/framework/platform/surfaceless
 )
 file(GLOB PLATFORM_EGL_SRC
-    ${CMAKE_SOURCE_DIR}/VK-GL-CTS/framework/platform/null/*.cpp)
+    ${CMAKE_SOURCE_DIR}/VK-GL-CTS/framework/platform/surfaceless/*.cpp)
+
+# (Optional) You can switch to X11 platform by replacing above with framework/platform/lnx
+# or use 'vanilla' for more complete window handling.
 
 # Define one big static lib to simplify link order
 add_library(cts_gles2_objects STATIC
