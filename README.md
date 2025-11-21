@@ -99,6 +99,61 @@ make -j$(nproc)
 ./bin/openglcts --deqp-case=dEQP-GLES2.info.* --deqp-log-file=test_log.xml
 ```
 
+### ⚠️ Surfacerless 平台与 pbuffer 说明
+
+当前集成使用 **surfaceless EGL 平台**（在 `cts_gles2.cmake` 中选择 `framework/platform/surfaceless`）。该平台不支持 `--deqp-surface-type=window`，若未指定 surface 类型，可能导致：
+
+```
+libEGL warning: bad surface attribute 0x3057
+Fail (glGetString() failed: GL_INVALID_FRAMEBUFFER_OPERATION)
+```
+
+为确保上下文与默认帧缓冲有效，请显式使用 pbuffer 离屏表面：
+
+```bash
+./bin/openglcts \
+    --deqp-surface-type=pbuffer \
+    --deqp-surface-width=256 \
+    --deqp-surface-height=256 \
+    --deqp-surface-samples=0 \
+    --deqp-archive-dir="$(pwd)/VK-GL-CTS/data" \
+    --deqp-case=dEQP-GLES2.info.vendor
+```
+
+推荐在调试阶段使用较小尺寸与关闭多重采样（samples=0）以减少显存与配置匹配压力。
+
+如果需要窗口可视化或驱动不支持 surfaceless，可切换到 X11 平台：
+
+```cmake
+# 在 cts_gles2.cmake 中将 platform 目录改为 lnx
+framework/platform/lnx
+```
+
+并安装依赖：
+
+```bash
+sudo apt-get install -y libx11-dev libxext-dev libxrandr-dev libxfixes-dev libxcursor-dev libxi-dev
+```
+
+之后可使用：
+
+```bash
+./bin/openglcts --deqp-surface-type=window --deqp-archive-dir="$(pwd)/VK-GL-CTS/data" --deqp-case=dEQP-GLES2.info.version
+```
+
+若要生成全部用例列表再筛选：
+
+```bash
+./bin/openglcts \
+    --deqp-surface-type=pbuffer \
+    --deqp-archive-dir="$(pwd)/VK-GL-CTS/data" \
+    --deqp-runmode=xml-caselist \
+    --deqp-log-file=cases.xml
+```
+
+从 `cases.xml` 中剔除暂不支持或容易失败的扩展相关用例再批量执行，可提高一次性通过率。
+
+
 ## 📖 使用指南
 
 ### 命令行参数
