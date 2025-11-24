@@ -86,17 +86,11 @@ make -j$(nproc)
 ### 4. 运行测试
 
 ```bash
-# 运行单个测试用例
-./bin/openglcts --deqp-case=dEQP-GLES2.info.version
-
-# 运行特定测试组
-./bin/openglcts --deqp-case=dEQP-GLES2.functional.color_clear.*
+# 全集测试（Surface为FBO，分辨率为256x256）
+./bin/openglcts --deqp-archive-dir="../VK-GL-CTS/data" --deqp-surface-type=fbo --deqp-surface-width=256 --deqp-surface-height=256
 
 # 生成测试用例列表
 ./bin/openglcts --deqp-runmode=xml-caselist --deqp-log-file=cases.xml
-
-# 运行测试并保存日志
-./bin/openglcts --deqp-case=dEQP-GLES2.info.* --deqp-log-file=test_log.xml
 ```
 
 ## 📖 使用指南
