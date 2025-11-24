@@ -3,14 +3,14 @@
 //   ./openglcts --deqp-case=dEQP-GLES2.info.version --deqp-log-file=log.xml
 //   ./openglcts --deqp-runmode=xml-caselist --deqp-log-file=cases.xml
 
-#include "tcuDefs.hpp"
-#include "tcuCommandLine.hpp"
-#include "tcuPlatform.hpp"
-#include "tcuApp.hpp"
-#include "tcuResource.hpp"
-#include "tcuTestLog.hpp"
 #include "deUniquePtr.hpp"
 #include "qpDebugOut.h"
+#include "tcuApp.hpp"
+#include "tcuCommandLine.hpp"
+#include "tcuDefs.hpp"
+#include "tcuPlatform.hpp"
+#include "tcuResource.hpp"
+#include "tcuTestLog.hpp"
 
 #include <cstdio>
 #include <cstdlib>
@@ -18,12 +18,11 @@
 
 tcu::Platform* createPlatform(void); // from platform/null
 
-namespace {
-bool disableRaw(int, const char*) { return false; }
-bool disableFmt(int, const char*, va_list) { return false; }
-void maybeDisableStdout(const tcu::CommandLine& cmd) {
-    if (cmd.quietMode()) qpRedirectOut(disableRaw, disableFmt);
-}
+static void disableStdout()
+{
+    qpRedirectOut(
+        [](int, const char*) { return false; },
+        [](int, const char*, va_list) { return false; });
 }
 
 int main(int argc, char** argv)
@@ -35,14 +34,16 @@ int main(int argc, char** argv)
     int exitStatus = EXIT_SUCCESS;
     try {
         tcu::CommandLine cmdLine(argc, argv);
-        maybeDisableStdout(cmdLine);
+        if (cmdLine.quietMode())
+            disableStdout();
 
         tcu::DirArchive archive(cmdLine.getArchiveDir());
         tcu::TestLog log(cmdLine.getLogFileName(), cmdLine.getLogFlags());
         de::UniquePtr<tcu::Platform> platform(createPlatform());
         de::UniquePtr<tcu::App> app(new tcu::App(*platform, archive, log, cmdLine));
 
-        while (app->iterate()) { /* iterate test cases */ }
+        while (app->iterate()) { /* iterate test cases */
+        }
 
         // Avoid accessing incomplete TestRunStatus (forward declared). Exit code stays SUCCESS; detailed
         // pass/fail statistics are printed by App internally. External scripts can parse log for failures.
