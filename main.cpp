@@ -25,7 +25,7 @@ static void disableStdout()
         [](int, const char*, va_list) { return false; });
 }
 
-int main(int argc, char** argv)
+extern "C" int main(int argc, char* argv[])
 {
 #if (DE_OS != DE_OS_WIN32)
     setvbuf(stdout, nullptr, _IOLBF, 4 * 1024);
