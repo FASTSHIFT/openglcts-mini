@@ -8,7 +8,12 @@ import serial
 import time
 import logging
 
-from .serial_utils import serial_open, serial_write, serial_write_hex, serial_wait_for_response
+from .serial_utils import (
+    serial_open,
+    serial_write,
+    serial_write_hex,
+    serial_wait_for_response,
+)
 from .utils import print_title_info
 
 logger = logging.getLogger(__name__)
@@ -17,12 +22,12 @@ logger = logging.getLogger(__name__)
 def check_system_alive(ser: serial.Serial, timeout: float, log_file=None) -> bool:
     """
     Check if system is alive by sending 'free' command
-    
+
     Args:
         ser: Serial port object
         timeout: Timeout in seconds
         log_file: File object to write serial data (optional)
-        
+
     Returns:
         True if system responded, False otherwise
     """
@@ -35,7 +40,7 @@ def check_system_alive(ser: serial.Serial, timeout: float, log_file=None) -> boo
 def reset_device(reset_port: str, reset_baudrate: int, reset_wait: float = 5) -> None:
     """
     Send restart command via reset serial port
-    
+
     Args:
         reset_port: Serial port name for reset control
         reset_baudrate: Baud rate for reset port
@@ -63,7 +68,7 @@ def reset_device(reset_port: str, reset_baudrate: int, reset_wait: float = 5) ->
 
         reset_ser.close()
         logger.info("Reset command sent. Device should be restarting...")
-        
+
         # Countdown display for waiting
         logger.info(f"Waiting for device to boot... ({reset_wait}s)")
         remaining = int(reset_wait)

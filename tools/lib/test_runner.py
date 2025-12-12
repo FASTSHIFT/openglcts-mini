@@ -22,10 +22,10 @@ logger = logging.getLogger(__name__)
 def build_test_command(group_path: str) -> str:
     """
     Build test command for a group
-    
+
     Args:
         group_path: Full path of the test group
-        
+
     Returns:
         Command string to execute
     """
@@ -44,7 +44,7 @@ def build_test_command(group_path: str) -> str:
 def run_group_tests(args) -> None:
     """
     Run tests by group
-    
+
     Args:
         args: Parsed command line arguments
     """
@@ -64,7 +64,9 @@ def run_group_tests(args) -> None:
             if args.start_group in path or path == args.start_group:
                 start_idx = i
                 found = True
-                logger.info(f"Starting from group: {path} (index {i + 1}/{total_groups})")
+                logger.info(
+                    f"Starting from group: {path} (index {i + 1}/{total_groups})"
+                )
                 break
         if not found:
             logger.error(f"Start group '{args.start_group}' not found in test groups!")
@@ -80,7 +82,9 @@ def run_group_tests(args) -> None:
     groups_to_test = group_paths[start_idx:]
     skipped_groups = start_idx
 
-    print_title_info(f"Total leaf groups to test: {len(groups_to_test)} (skipped: {skipped_groups})")
+    print_title_info(
+        f"Total leaf groups to test: {len(groups_to_test)} (skipped: {skipped_groups})"
+    )
 
     # Create log directory
     if args.log_dir:
@@ -100,7 +104,13 @@ def run_group_tests(args) -> None:
     reset_device(args.reset_port, args.reset_baudrate, args.reset_wait)
 
     # Statistics
-    stats: Dict[str, int] = {"passed": 0, "failed": 0, "timeout": 0, "hung": 0, "crash": 0}
+    stats: Dict[str, int] = {
+        "passed": 0,
+        "failed": 0,
+        "timeout": 0,
+        "hung": 0,
+        "crash": 0,
+    }
 
     # Total time tracking
     total_start_time = time.time()
@@ -110,7 +120,9 @@ def run_group_tests(args) -> None:
     csv_filepath = os.path.join(log_dir, "test_report.csv")
     csv_file = open(csv_filepath, "w", newline="", encoding="utf-8")
     csv_writer = csv.writer(csv_file)
-    csv_writer.writerow(["Index", "Group Path", "Result", "Duration (s)", "Start Time", "End Time"])
+    csv_writer.writerow(
+        ["Index", "Group Path", "Result", "Duration (s)", "Start Time", "End Time"]
+    )
     logger.info(f"Writing test report to: {csv_filepath}")
 
     try:
@@ -167,15 +179,17 @@ def _run_single_group_test(
     """
     # Record case start time
     case_start_time = time.time()
-    case_start_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    
+    case_start_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     # Calculate actual index in full list
     actual_idx = start_idx + idx
-    
+
     # Initialize result tracking
     test_result = "UNKNOWN"
 
-    print_title_info(f"[{idx}/{total_to_test}] (#{actual_idx}/{total_groups}) Testing group: {group_path}")
+    print_title_info(
+        f"[{idx}/{total_to_test}] (#{actual_idx}/{total_groups}) Testing group: {group_path}"
+    )
 
     # Create log file for this test group
     log_filename = group_path.replace(".", "_").replace("*", "all") + ".log"
@@ -200,7 +214,9 @@ def _run_single_group_test(
     test_crashed = False
 
     while wait_count < args.max_wait_count:
-        logger.info(f"Waiting for test completion (free check count: {wait_count}/{args.max_wait_count})...")
+        logger.info(
+            f"Waiting for test completion (free check count: {wait_count}/{args.max_wait_count})..."
+        )
 
         # Wait for "DONE!" or "PANIC" response
         found, has_any_data, matched_keyword = serial_wait_for_response(
@@ -223,7 +239,9 @@ def _run_single_group_test(
             break
 
         if has_any_data:
-            logger.info("Received data during wait, system is alive. Continuing to wait...")
+            logger.info(
+                "Received data during wait, system is alive. Continuing to wait..."
+            )
             continue
         else:
             wait_count += 1
@@ -232,7 +250,9 @@ def _run_single_group_test(
             )
             system_alive = check_system_alive(ser, args.test_timeout, log_file)
             if system_alive:
-                logger.info("System is still alive (free responded). Continuing to wait...")
+                logger.info(
+                    "System is still alive (free responded). Continuing to wait..."
+                )
                 continue
             else:
                 logger.error("System is not responding! Breaking wait loop.")
@@ -243,26 +263,30 @@ def _run_single_group_test(
 
     if not test_completed and not test_crashed:
         if wait_count >= args.max_wait_count:
-            logger.error(f"Group {group_path} exceeded max wait count ({args.max_wait_count}). Moving to next test.")
+            logger.error(
+                f"Group {group_path} exceeded max wait count ({args.max_wait_count}). Moving to next test."
+            )
             log_file.write(f"\n\n# Result: TIMEOUT (exceeded max wait count)\n")
             stats["timeout"] += 1
             test_result = "TIMEOUT"
 
     # Calculate case duration
     case_end_time = time.time()
-    case_end_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    case_end_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     case_duration = case_end_time - case_start_time
     total_duration = case_end_time - total_start_time
 
     # Write to CSV report
-    csv_writer.writerow([
-        actual_idx,
-        group_path,
-        test_result,
-        f"{case_duration:.2f}",
-        case_start_datetime,
-        case_end_datetime
-    ])
+    csv_writer.writerow(
+        [
+            actual_idx,
+            group_path,
+            test_result,
+            f"{case_duration:.2f}",
+            case_start_datetime,
+            case_end_datetime,
+        ]
+    )
     csv_file.flush()
 
     # Write end time and duration to log file
@@ -311,28 +335,34 @@ def _write_final_summary(
     csv_writer.writerow(["Total Groups", total_groups])
     csv_writer.writerow(["Skipped", skipped_groups])
     csv_writer.writerow(["To Test", total_to_test])
-    
-    completed = stats["passed"] + stats["failed"] + stats["timeout"] + stats["hung"] + stats["crash"]
-    
+
+    completed = (
+        stats["passed"]
+        + stats["failed"]
+        + stats["timeout"]
+        + stats["hung"]
+        + stats["crash"]
+    )
+
     csv_writer.writerow(["Completed", completed])
     csv_writer.writerow(["Passed", stats["passed"]])
     csv_writer.writerow(["Failed", stats["failed"]])
     csv_writer.writerow(["Timeout", stats["timeout"]])
     csv_writer.writerow(["Hung", stats["hung"]])
     csv_writer.writerow(["Crash", stats["crash"]])
-    
+
     pass_rate = 0.0
     if total_to_test > 0:
         pass_rate = stats["passed"] / total_to_test * 100
         csv_writer.writerow(["Pass Rate (%)", f"{pass_rate:.1f}"])
-    
+
     csv_writer.writerow(["Total Time (s)", f"{final_total_duration:.2f}"])
-    
+
     avg_time = 0.0
     if completed > 0:
         avg_time = final_total_duration / completed
         csv_writer.writerow(["Avg Time per Group (s)", f"{avg_time:.2f}"])
-    
+
     csv_file.close()
     logger.info(f"Test report saved to: {csv_filepath}")
 
@@ -341,7 +371,9 @@ def _write_final_summary(
     logger.info("=" * 60)
     logger.info("FINAL TEST SUMMARY")
     logger.info("=" * 60)
-    logger.info(f"Total Groups:  {total_groups} (skipped: {skipped_groups}, to test: {total_to_test})")
+    logger.info(
+        f"Total Groups:  {total_groups} (skipped: {skipped_groups}, to test: {total_to_test})"
+    )
     logger.info(f"Completed:     {completed}")
     logger.info(f"✅ Passed:     {stats['passed']}")
     logger.info(f"❌ Failed:     {stats['failed']}")

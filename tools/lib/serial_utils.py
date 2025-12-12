@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 def serial_open(port: str, baudrate: int = 921600, timeout: float = 1) -> serial.Serial:
     """
     Open serial port
-    
+
     Args:
         port: Serial port name (e.g., COM1, /dev/ttyUSB0)
         baudrate: Baud rate, default 921600
         timeout: Read timeout in seconds, default 1
-        
+
     Returns:
         Opened serial port object
     """
@@ -46,7 +46,7 @@ def serial_open(port: str, baudrate: int = 921600, timeout: float = 1) -> serial
 def serial_write(ser: serial.Serial, command: str, sleep_duration: float = 0) -> None:
     """
     Write string command to serial port
-    
+
     Args:
         ser: Serial port object
         command: Command string to send
@@ -72,7 +72,7 @@ def serial_write(ser: serial.Serial, command: str, sleep_duration: float = 0) ->
 def serial_write_hex(ser: serial.Serial, hex_data: bytes) -> None:
     """
     Send hexadecimal data to serial port
-    
+
     Args:
         ser: Serial port object
         hex_data: Bytes data to send
@@ -88,20 +88,17 @@ def serial_write_hex(ser: serial.Serial, hex_data: bytes) -> None:
 
 
 def serial_wait_for_response(
-    ser: serial.Serial,
-    keyword: Union[str, List[str]],
-    timeout: float,
-    log_file=None
+    ser: serial.Serial, keyword: Union[str, List[str]], timeout: float, log_file=None
 ) -> Tuple[bool, bool, Optional[str]]:
     """
     Wait for serial port to return response containing specified keyword
-    
+
     Args:
         ser: Serial port object
         keyword: Single keyword string or list of keywords to match
         timeout: Timeout in seconds
         log_file: File object to write serial data (optional)
-        
+
     Returns:
         Tuple of (found, has_any_data, matched_keyword):
         - found: Whether keyword was found

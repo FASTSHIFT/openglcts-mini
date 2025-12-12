@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 def setup_logger(level: int = logging.INFO) -> logging.Logger:
     """
     Setup and configure logging
-    
+
     Args:
         level: Logging level, default INFO
-        
+
     Returns:
         Configured logger
     """
@@ -30,10 +30,10 @@ def setup_logger(level: int = logging.INFO) -> logging.Logger:
 def format_duration(seconds: float) -> str:
     """
     Format duration in seconds to human readable string
-    
+
     Args:
         seconds: Duration in seconds
-        
+
     Returns:
         Formatted string like "30.5s", "2m 15.3s", or "1h 30m 45.2s"
     """
@@ -53,7 +53,7 @@ def format_duration(seconds: float) -> str:
 def print_title_info(title: str) -> None:
     """
     Print a title with decorative borders
-    
+
     Args:
         title: Title string to print
     """
@@ -75,7 +75,7 @@ def print_progress(
 ) -> None:
     """
     Print test progress summary with progress bar
-    
+
     Args:
         current: Current test index
         total: Total number of tests
