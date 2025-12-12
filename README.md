@@ -13,6 +13,7 @@
 - **标准兼容**: 基于 Khronos 官方的一致性测试套件
 - **灵活测试**: 支持单个测试用例或完整测试套件执行
 - **多平台支持**: 支持 Linux 和其他 POSIX 系统
+- **自动化测试工具**: 提供串口自动化测试脚本，支持嵌入式设备批量测试（详见 [tools/README.md](tools/README.md)）
 
 ## 📋 系统要求
 
@@ -195,7 +196,29 @@ cmake -DBUILD_CTS_GLES2=OFF ..
 - [Khronos Group](https://www.khronos.org/) - VK-GL-CTS 项目
 - [VK-GL-CTS](https://github.com/KhronosGroup/VK-GL-CTS) - 上游测试套件
 
-## 📚 相关资源
+## �️ 自动化测试工具
+
+本项目提供了用于嵌入式设备的自动化测试工具，通过串口控制设备执行 dEQP 测试。
+
+详细文档请参阅: **[tools/README.md](tools/README.md)**
+
+主要功能：
+- 解析 dEQP 测试用例 XML 文件
+- 通过串口自动发送测试命令
+- 自动检测测试完成、崩溃、超时等状态
+- 自动重置设备并继续下一组测试
+- 生成 CSV 测试报告
+
+快速示例：
+```bash
+cd tools
+python3 run_auto_test.py -f ../dEQP-GLES2-cases.xml \
+    --run-tests \
+    --test-port /dev/ttyUSB1 \
+    --reset-port /dev/ttyCH341USB1
+```
+
+## �📚 相关资源
 
 - [OpenGL ES 2.0 规范](https://www.khronos.org/registry/OpenGL/specs/es/2.0/es_full_spec_2.0.pdf)
 - [VK-GL-CTS 文档](https://github.com/KhronosGroup/VK-GL-CTS/blob/main/README.md)
