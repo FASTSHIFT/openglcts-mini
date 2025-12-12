@@ -12,7 +12,12 @@ from datetime import datetime
 from typing import Dict, List
 
 from .test_parser import TestCaseParser
-from .serial_utils import serial_open, serial_write, serial_wait_for_response
+from .serial_utils import (
+    serial_open,
+    serial_write,
+    serial_wait_for_response,
+    collect_crash_log,
+)
 from .device_control import check_system_alive, reset_device
 from .utils import format_duration, print_title_info, print_progress
 
@@ -39,6 +44,158 @@ def build_test_command(group_path: str) -> str:
         f"--deqp-log-filename=/dev/null &\n"
     )
     return cmd
+
+
+def _handle_crash(ser, log_file, print_output: bool) -> None:
+    """
+    Collect crash log after PANIC detected.
+
+    Args:
+        ser: Serial port object
+        log_file: Log file object
+        print_output: Whether to print output to console
+    """
+    log_file.write("\n# --- Begin Crash Log ---\n")
+    collect_crash_log(ser, log_file, print_output, idle_timeout=2.0, max_total=10.0)
+    log_file.write("\n# --- End Crash Log ---\n")
+
+
+def _wait_for_test_result(
+    ser,
+    args,
+    log_file,
+    group_path: str,
+    stats: Dict[str, int],
+) -> str:
+    """
+    Wait for test completion and handle result.
+
+    Args:
+        ser: Serial port object
+        args: Parsed command line arguments
+        log_file: Log file object
+        group_path: Current test group path
+        stats: Statistics dictionary
+
+    Returns:
+        Test result string: "PASSED", "CRASH", "HUNG", or "TIMEOUT"
+    """
+    print_output = getattr(args, "print_output", False)
+    wait_count = 0
+    test_completed = False
+    test_crashed = False
+    test_result = "UNKNOWN"
+
+    while wait_count < args.max_wait_count:
+        logger.info(
+            f"Waiting for test completion (free check count: {wait_count}/{args.max_wait_count})..."
+        )
+
+        found, has_any_data, matched_keyword = serial_wait_for_response(
+            ser, ["DONE!", "PANIC"], args.test_timeout, log_file, print_output
+        )
+
+        if found:
+            if matched_keyword and "panic" in matched_keyword.lower():
+                logger.error(f"Group {group_path} CRASHED (PANIC detected)!")
+                log_file.write(f"\n\n# Result: CRASH (PANIC)\n")
+                _handle_crash(ser, log_file, print_output)
+                stats["crash"] += 1
+                test_crashed = True
+                test_result = "CRASH"
+            else:
+                logger.info(f"Group {group_path} completed successfully.")
+                log_file.write(f"\n\n# Result: PASSED\n")
+                stats["passed"] += 1
+                test_completed = True
+                test_result = "PASSED"
+            break
+
+        if has_any_data:
+            logger.info(
+                "Received data during wait, system is alive. Continuing to wait..."
+            )
+            continue
+        else:
+            wait_count += 1
+            logger.warning(
+                f"No data received within {args.test_timeout}s, checking system status (attempt {wait_count}/{args.max_wait_count})..."
+            )
+            system_alive = check_system_alive(
+                ser, args.test_timeout, log_file, print_output
+            )
+            if system_alive:
+                logger.info(
+                    "System is still alive (free responded). Continuing to wait..."
+                )
+                continue
+            else:
+                logger.error("System is not responding! Breaking wait loop.")
+                log_file.write(f"\n\n# Result: SYSTEM HUNG\n")
+                stats["hung"] += 1
+                test_result = "HUNG"
+                break
+
+    if not test_completed and not test_crashed:
+        if wait_count >= args.max_wait_count:
+            logger.error(
+                f"Group {group_path} exceeded max wait count ({args.max_wait_count}). Moving to next test."
+            )
+            log_file.write(f"\n\n# Result: TIMEOUT (exceeded max wait count)\n")
+            stats["timeout"] += 1
+            test_result = "TIMEOUT"
+
+    return test_result
+
+
+def _write_test_case_report(
+    log_file,
+    csv_writer,
+    csv_file,
+    actual_idx: int,
+    group_path: str,
+    test_result: str,
+    case_start_time: float,
+    case_start_datetime: str,
+) -> float:
+    """
+    Write test case report to log and CSV.
+
+    Args:
+        log_file: Log file object
+        csv_writer: CSV writer object
+        csv_file: CSV file object
+        actual_idx: Actual index in full list
+        group_path: Test group path
+        test_result: Test result string
+        case_start_time: Case start timestamp
+        case_start_datetime: Case start datetime string
+
+    Returns:
+        Case duration in seconds
+    """
+    case_end_time = time.time()
+    case_end_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    case_duration = case_end_time - case_start_time
+
+    csv_writer.writerow(
+        [
+            actual_idx,
+            group_path,
+            test_result,
+            f"{case_duration:.2f}",
+            case_start_datetime,
+            case_end_datetime,
+        ]
+    )
+    csv_file.flush()
+
+    log_file.write(f"\n# End Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    log_file.write(f"# Duration: {format_duration(case_duration)}\n")
+    log_file.close()
+
+    logger.info(f"Case duration: {format_duration(case_duration)}")
+    return case_duration
 
 
 def run_group_tests(args) -> None:
@@ -184,9 +341,6 @@ def _run_single_group_test(
     # Calculate actual index in full list
     actual_idx = start_idx + idx
 
-    # Initialize result tracking
-    test_result = "UNKNOWN"
-
     print_title_info(
         f"[{idx}/{total_to_test}] (#{actual_idx}/{total_groups}) Testing group: {group_path}"
     )
@@ -208,107 +362,23 @@ def _run_single_group_test(
     serial_write(ser, cmd)
     log_file.write(f"Command: {cmd}\n")
 
-    # Wait for test completion with retry logic
-    wait_count = 0
-    test_completed = False
-    test_crashed = False
+    # Wait for test result
+    test_result = _wait_for_test_result(ser, args, log_file, group_path, stats)
 
-    while wait_count < args.max_wait_count:
-        logger.info(
-            f"Waiting for test completion (free check count: {wait_count}/{args.max_wait_count})..."
-        )
-
-        # Get print_output setting from args (default False)
-        print_output = getattr(args, "print_output", False)
-
-        # Wait for "DONE!" or "PANIC" response
-        found, has_any_data, matched_keyword = serial_wait_for_response(
-            ser, ["DONE!", "PANIC"], args.test_timeout, log_file, print_output
-        )
-
-        if found:
-            if matched_keyword and "panic" in matched_keyword.lower():
-                logger.error(f"Group {group_path} CRASHED (PANIC detected)!")
-                log_file.write(f"\n\n# Result: CRASH (PANIC)\n")
-
-                from .serial_utils import collect_crash_log
-
-                log_file.write("\n# --- Begin Crash Log ---\n")
-                collect_crash_log(
-                    ser, log_file, print_output, idle_timeout=2.0, max_total=10.0
-                )
-                log_file.write("\n# --- End Crash Log ---\n")
-
-                stats["crash"] += 1
-                test_crashed = True
-                test_result = "CRASH"
-            else:
-                logger.info(f"Group {group_path} completed successfully.")
-                log_file.write(f"\n\n# Result: PASSED\n")
-                stats["passed"] += 1
-                test_completed = True
-                test_result = "PASSED"
-            break
-
-        if has_any_data:
-            logger.info(
-                "Received data during wait, system is alive. Continuing to wait..."
-            )
-            continue
-        else:
-            wait_count += 1
-            logger.warning(
-                f"No data received within {args.test_timeout}s, checking system status (attempt {wait_count}/{args.max_wait_count})..."
-            )
-            system_alive = check_system_alive(
-                ser, args.test_timeout, log_file, print_output
-            )
-            if system_alive:
-                logger.info(
-                    "System is still alive (free responded). Continuing to wait..."
-                )
-                continue
-            else:
-                logger.error("System is not responding! Breaking wait loop.")
-                log_file.write(f"\n\n# Result: SYSTEM HUNG\n")
-                stats["hung"] += 1
-                test_result = "HUNG"
-                break
-
-    if not test_completed and not test_crashed:
-        if wait_count >= args.max_wait_count:
-            logger.error(
-                f"Group {group_path} exceeded max wait count ({args.max_wait_count}). Moving to next test."
-            )
-            log_file.write(f"\n\n# Result: TIMEOUT (exceeded max wait count)\n")
-            stats["timeout"] += 1
-            test_result = "TIMEOUT"
-
-    # Calculate case duration
-    case_end_time = time.time()
-    case_end_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    case_duration = case_end_time - case_start_time
-    total_duration = case_end_time - total_start_time
-
-    # Write to CSV report
-    csv_writer.writerow(
-        [
-            actual_idx,
-            group_path,
-            test_result,
-            f"{case_duration:.2f}",
-            case_start_datetime,
-            case_end_datetime,
-        ]
+    # Write test case report and get duration
+    case_duration = _write_test_case_report(
+        log_file,
+        csv_writer,
+        csv_file,
+        actual_idx,
+        group_path,
+        test_result,
+        case_start_time,
+        case_start_datetime,
     )
-    csv_file.flush()
 
-    # Write end time and duration to log file
-    log_file.write(f"\n# End Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    log_file.write(f"# Duration: {format_duration(case_duration)}\n")
-    log_file.close()
-
-    logger.info(f"Case duration: {format_duration(case_duration)}")
+    # Calculate total duration
+    total_duration = time.time() - total_start_time
 
     # Print progress
     print_progress(
