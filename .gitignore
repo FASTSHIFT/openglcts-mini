@@ -44,3 +44,4 @@
 .vscode/
 *.qpa
 build/
+__pycache__
