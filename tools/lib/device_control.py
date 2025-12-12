@@ -63,8 +63,15 @@ def reset_device(reset_port: str, reset_baudrate: int, reset_wait: float = 5) ->
 
         reset_ser.close()
         logger.info("Reset command sent. Device should be restarting...")
+        
+        # Countdown display for waiting
         logger.info(f"Waiting for device to boot... ({reset_wait}s)")
-        time.sleep(reset_wait)
+        remaining = int(reset_wait)
+        while remaining > 0:
+            print(f"\r  ⏳ Countdown: {remaining}s remaining...  ", end="", flush=True)
+            time.sleep(1)
+            remaining -= 1
+        print(f"\r  ✅ Device boot wait complete.            ", flush=True)
 
     except serial.SerialException as e:
         logger.error(f"Error opening reset port: {e}")
