@@ -45,3 +45,4 @@
 *.qpa
 build/
 __pycache__
+logs_*/
