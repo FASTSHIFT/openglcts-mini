@@ -19,7 +19,9 @@ from .utils import print_title_info
 logger = logging.getLogger(__name__)
 
 
-def check_system_alive(ser: serial.Serial, timeout: float, log_file=None) -> bool:
+def check_system_alive(
+    ser: serial.Serial, timeout: float, log_file=None, print_output: bool = False
+) -> bool:
     """
     Check if system is alive by sending 'free' command
 
@@ -27,13 +29,16 @@ def check_system_alive(ser: serial.Serial, timeout: float, log_file=None) -> boo
         ser: Serial port object
         timeout: Timeout in seconds
         log_file: File object to write serial data (optional)
+        print_output: Whether to print received data to console (default: False)
 
     Returns:
         True if system responded, False otherwise
     """
     logger.info("Checking if system is alive with 'free' command...")
     serial_write(ser, "free\n")
-    found, _, _ = serial_wait_for_response(ser, "total", timeout, log_file)
+    found, _, _ = serial_wait_for_response(
+        ser, "total", timeout, log_file, print_output
+    )
     return found
 
 

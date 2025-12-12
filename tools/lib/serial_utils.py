@@ -88,7 +88,11 @@ def serial_write_hex(ser: serial.Serial, hex_data: bytes) -> None:
 
 
 def serial_wait_for_response(
-    ser: serial.Serial, keyword: Union[str, List[str]], timeout: float, log_file=None
+    ser: serial.Serial,
+    keyword: Union[str, List[str]],
+    timeout: float,
+    log_file=None,
+    print_output: bool = False,
 ) -> Tuple[bool, bool, Optional[str]]:
     """
     Wait for serial port to return response containing specified keyword
@@ -98,6 +102,7 @@ def serial_wait_for_response(
         keyword: Single keyword string or list of keywords to match
         timeout: Timeout in seconds
         log_file: File object to write serial data (optional)
+        print_output: Whether to print received data to console (default: False)
 
     Returns:
         Tuple of (found, has_any_data, matched_keyword):
@@ -125,8 +130,9 @@ def serial_wait_for_response(
                 data = ser.read(ser.in_waiting).decode("utf-8", errors="ignore")
                 buffer += data
                 has_any_data = True
-                # Keep real-time display of serial data while logging
-                print(data, end="", flush=True)
+                # Print serial data to console if enabled
+                if print_output:
+                    print(data, end="", flush=True)
                 logger.debug(f"Received data: {repr(data)}")
 
                 # Write to log file if provided

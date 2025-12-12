@@ -62,66 +62,88 @@ Examples:
 
     # Display options
     parser.add_argument(
-        "-d", "--depth", type=int, default=None,
-        help="Maximum depth to display (default: show all)"
+        "-d",
+        "--depth",
+        type=int,
+        default=None,
+        help="Maximum depth to display (default: show all)",
     )
     parser.add_argument(
-        "--list-tests", action="store_true",
-        help="List all executable test case full paths"
+        "--list-tests",
+        action="store_true",
+        help="List all executable test case full paths",
     )
     parser.add_argument(
-        "--list-groups", action="store_true",
-        help="List all test group full paths"
+        "--list-groups", action="store_true", help="List all test group full paths"
     )
     parser.add_argument(
-        "--summary", action="store_true",
-        help="Show summary information only"
+        "--summary", action="store_true", help="Show summary information only"
     )
 
     # Test execution options
     parser.add_argument(
-        "--run-tests", action="store_true",
-        help="Run tests by group (send commands via serial port)"
+        "--run-tests",
+        action="store_true",
+        help="Run tests by group (send commands via serial port)",
     )
     parser.add_argument(
-        "--test-port", default=None,
-        help="Serial port for test commands (e.g., /dev/ttyUSB0). Required with --run-tests"
+        "--test-port",
+        default=None,
+        help="Serial port for test commands (e.g., /dev/ttyUSB0). Required with --run-tests",
     )
     parser.add_argument(
-        "--test-baudrate", type=int, default=921600,
-        help="Baud rate for test port (default: 921600)"
+        "--test-baudrate",
+        type=int,
+        default=921600,
+        help="Baud rate for test port (default: 921600)",
     )
     parser.add_argument(
-        "--test-timeout", type=float, default=10,
-        help="Timeout in seconds for test response (default: 10)"
+        "--test-timeout",
+        type=float,
+        default=10,
+        help="Timeout in seconds for test response (default: 10)",
     )
 
     # Reset options
     parser.add_argument(
-        "--reset-port", default=None,
-        help="Serial port for device reset (e.g., /dev/ttyUSB1)"
+        "--reset-port",
+        default=None,
+        help="Serial port for device reset (e.g., /dev/ttyUSB1)",
     )
     parser.add_argument(
-        "--reset-baudrate", type=int, default=9600,
-        help="Baud rate for reset port (default: 9600)"
+        "--reset-baudrate",
+        type=int,
+        default=9600,
+        help="Baud rate for reset port (default: 9600)",
     )
     parser.add_argument(
-        "--reset-wait", type=float, default=5,
-        help="Wait time after reset in seconds (default: 5)"
+        "--reset-wait",
+        type=float,
+        default=5,
+        help="Wait time after reset in seconds (default: 5)",
     )
 
     # Test control options
     parser.add_argument(
-        "--max-wait-count", type=int, default=10,
-        help="Maximum wait attempts before timeout (default: 10)"
+        "--max-wait-count",
+        type=int,
+        default=10,
+        help="Maximum wait attempts before timeout (default: 10)",
     )
     parser.add_argument(
-        "--log-dir", default=None,
-        help="Directory for test logs. Auto-created with timestamp if not specified"
+        "--log-dir",
+        default=None,
+        help="Directory for test logs. Auto-created with timestamp if not specified",
     )
     parser.add_argument(
-        "--start-group", default=None,
-        help="Start testing from specified group (skip earlier groups)"
+        "--start-group",
+        default=None,
+        help="Start testing from specified group (skip earlier groups)",
+    )
+    parser.add_argument(
+        "--print-output",
+        action="store_true",
+        help="Print device serial output to console (default: disabled)",
     )
 
     return parser

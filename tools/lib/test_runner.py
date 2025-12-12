@@ -218,9 +218,12 @@ def _run_single_group_test(
             f"Waiting for test completion (free check count: {wait_count}/{args.max_wait_count})..."
         )
 
+        # Get print_output setting from args (default False)
+        print_output = getattr(args, "print_output", False)
+
         # Wait for "DONE!" or "PANIC" response
         found, has_any_data, matched_keyword = serial_wait_for_response(
-            ser, ["DONE!", "PANIC"], args.test_timeout, log_file
+            ser, ["DONE!", "PANIC"], args.test_timeout, log_file, print_output
         )
 
         if found:
@@ -248,7 +251,9 @@ def _run_single_group_test(
             logger.warning(
                 f"No data received within {args.test_timeout}s, checking system status (attempt {wait_count}/{args.max_wait_count})..."
             )
-            system_alive = check_system_alive(ser, args.test_timeout, log_file)
+            system_alive = check_system_alive(
+                ser, args.test_timeout, log_file, print_output
+            )
             if system_alive:
                 logger.info(
                     "System is still alive (free responded). Continuing to wait..."
