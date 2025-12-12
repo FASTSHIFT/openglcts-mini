@@ -202,15 +202,15 @@ def _run_single_group_test(
     while wait_count < args.max_wait_count:
         logger.info(f"Waiting for test completion (free check count: {wait_count}/{args.max_wait_count})...")
 
-        # Wait for "DONE!" or "arm_memfault" response
+        # Wait for "DONE!" or "PANIC" response
         found, has_any_data, matched_keyword = serial_wait_for_response(
-            ser, ["DONE!", "arm_memfault"], args.test_timeout, log_file
+            ser, ["DONE!", "PANIC"], args.test_timeout, log_file
         )
 
         if found:
-            if matched_keyword and "arm_memfault" in matched_keyword.lower():
-                logger.error(f"Group {group_path} CRASHED (arm_memfault detected)!")
-                log_file.write(f"\n\n# Result: CRASH (arm_memfault)\n")
+            if matched_keyword and "panic" in matched_keyword.lower():
+                logger.error(f"Group {group_path} CRASHED (PANIC detected)!")
+                log_file.write(f"\n\n# Result: CRASH (PANIC)\n")
                 stats["crash"] += 1
                 test_crashed = True
                 test_result = "CRASH"
