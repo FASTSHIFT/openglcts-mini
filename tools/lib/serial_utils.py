@@ -148,3 +148,52 @@ def serial_wait_for_response(
         time.sleep(0.1)
 
     return (False, has_any_data, None)
+
+
+def collect_crash_log(
+    ser: serial.Serial,
+    log_file=None,
+    print_output: bool = False,
+    idle_timeout: float = 2.0,
+    max_total: float = 10.0,
+) -> str:
+    """
+    Keep collecting serial log until no new data for idle_timeout seconds or
+    total time exceeds max_total seconds.
+
+    Args:
+        ser: Serial port object
+        log_file: File object to write serial data (optional)
+        print_output: Whether to print received data to console (default: False)
+        idle_timeout: Seconds to wait with no new data before stopping
+        max_total: Maximum total seconds to collect
+
+    Returns:
+        Collected log string
+    """
+    start_time = time.time()
+    last_data_time = time.time()
+    buffer = ""
+    while True:
+        if ser.in_waiting > 0:
+            try:
+                data = ser.read(ser.in_waiting).decode("utf-8", errors="ignore")
+                buffer += data
+                last_data_time = time.time()
+                if print_output:
+                    print(data, end="", flush=True)
+                if log_file:
+                    log_file.write(data)
+                    log_file.flush()
+            except Exception as e:
+                logger.error(f"Read error during crash log: {e}")
+        else:
+            time.sleep(0.1)
+        if time.time() - last_data_time > idle_timeout:
+            break
+        if time.time() - start_time > max_total:
+            logger.warning(
+                f"Crash log collection reached max_total={max_total}s, force stop."
+            )
+            break
+    return buffer

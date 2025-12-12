@@ -230,6 +230,15 @@ def _run_single_group_test(
             if matched_keyword and "panic" in matched_keyword.lower():
                 logger.error(f"Group {group_path} CRASHED (PANIC detected)!")
                 log_file.write(f"\n\n# Result: CRASH (PANIC)\n")
+
+                from .serial_utils import collect_crash_log
+
+                log_file.write("\n# --- Begin Crash Log ---\n")
+                collect_crash_log(
+                    ser, log_file, print_output, idle_timeout=2.0, max_total=10.0
+                )
+                log_file.write("\n# --- End Crash Log ---\n")
+
                 stats["crash"] += 1
                 test_crashed = True
                 test_result = "CRASH"
