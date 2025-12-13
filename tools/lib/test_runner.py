@@ -456,12 +456,12 @@ def _write_final_summary(
         pass_rate = stats["passed"] / total_to_test * 100
         csv_writer.writerow(["Pass Rate (%)", f"{pass_rate:.1f}"])
 
-    csv_writer.writerow(["Total Time (s)", f"{final_total_duration:.2f}"])
+    csv_writer.writerow(["Total Time", format_duration(final_total_duration)])
 
     avg_time = 0.0
     if completed > 0:
         avg_time = final_total_duration / completed
-        csv_writer.writerow(["Avg Time per Group (s)", f"{avg_time:.2f}"])
+        csv_writer.writerow(["Avg Time per Group", format_duration(avg_time)])
 
     csv_file.close()
     logger.info(f"Test report saved to: {csv_filepath}")
