@@ -68,7 +68,7 @@ def print_progress(
     passed: int,
     failed: int,
     timeout: int,
-    hung: int,
+    hang: int,
     crash: int,
     case_duration: float = 0,
     total_duration: float = 0,
@@ -82,7 +82,7 @@ def print_progress(
         passed: Number of passed tests
         failed: Number of failed tests
         timeout: Number of timed out tests
-        hung: Number of hung tests
+        hang: Number of hang tests
         crash: Number of crashed tests
         case_duration: Duration of current case in seconds
         total_duration: Total elapsed time in seconds
@@ -95,7 +95,7 @@ def print_progress(
     logger.info("")
     logger.info(f"Progress: [{bar}] {current}/{total} ({progress_pct:.1f}%)")
     logger.info(
-        f"Results:  ✅ Passed: {passed}  ❌ Failed: {failed}  ⏱ Timeout: {timeout}  💀 Hung: {hung}  💥 Crash: {crash}"
+        f"Results:  ✅ Passed: {passed}  ❌ Failed: {failed}  ⏱ Timeout: {timeout}  💀 Hang: {hang}  💥 Crash: {crash}"
     )
     logger.info(
         f"Time:     ⏱ Case: {format_duration(case_duration)}  📊 Total: {format_duration(total_duration)}"

@@ -78,7 +78,7 @@ def _wait_for_test_result(
         stats: Statistics dictionary
 
     Returns:
-        Test result string: "PASSED", "CRASH", "HUNG", or "TIMEOUT"
+        Test result string: "PASSED", "CRASH", "HANG", or "TIMEOUT"
     """
     print_output = getattr(args, "print_output", False)
     wait_count = 0
@@ -147,9 +147,9 @@ def _wait_for_test_result(
                 continue
             else:
                 logger.error("System is not responding! Breaking wait loop.")
-                log_file.write(f"\n\n# Result: SYSTEM HUNG\n")
-                stats["hung"] += 1
-                test_result = "HUNG"
+                log_file.write(f"\n\n# Result: SYSTEM HANG\n")
+                stats["hang"] += 1
+                test_result = "HANG"
                 break
 
     if not test_completed and not test_crashed:
@@ -281,7 +281,7 @@ def run_group_tests(args) -> None:
         "passed": 0,
         "failed": 0,
         "timeout": 0,
-        "hung": 0,
+        "hang": 0,
         "crash": 0,
     }
 
@@ -403,7 +403,7 @@ def _run_single_group_test(
         stats["passed"],
         stats["failed"],
         stats["timeout"],
-        stats["hung"],
+        stats["hang"],
         stats["crash"],
         case_duration,
         total_duration,
@@ -440,7 +440,7 @@ def _write_final_summary(
         stats["passed"]
         + stats["failed"]
         + stats["timeout"]
-        + stats["hung"]
+        + stats["hang"]
         + stats["crash"]
     )
 
@@ -448,7 +448,7 @@ def _write_final_summary(
     csv_writer.writerow(["Passed", stats["passed"]])
     csv_writer.writerow(["Failed", stats["failed"]])
     csv_writer.writerow(["Timeout", stats["timeout"]])
-    csv_writer.writerow(["Hung", stats["hung"]])
+    csv_writer.writerow(["Hang", stats["hang"]])
     csv_writer.writerow(["Crash", stats["crash"]])
 
     pass_rate = 0.0
@@ -478,7 +478,7 @@ def _write_final_summary(
     logger.info(f"✅ Passed:     {stats['passed']}")
     logger.info(f"❌ Failed:     {stats['failed']}")
     logger.info(f"⏱ Timeout:    {stats['timeout']}")
-    logger.info(f"💀 Hung:       {stats['hung']}")
+    logger.info(f"💀 Hang:       {stats['hang']}")
     logger.info(f"💥 Crash:      {stats['crash']}")
     if total_to_test > 0:
         logger.info(f"Pass Rate:     {pass_rate:.1f}%")

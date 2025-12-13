@@ -135,7 +135,7 @@ python3 run_auto_test.py -f ../dEQP-GLES2-cases.xml \
 |------|------|
 | `PASSED` | 测试成功完成（检测到 "DONE!"） |
 | `CRASH` | 系统崩溃（检测到 "PANIC"） |
-| `HUNG` | 系统无响应（free 命令无响应） |
+| `HANG` | 系统无响应（free 命令无响应） |
 | `TIMEOUT` | 超时（超过最大等待次数） |
 
 ### 输出文件
@@ -164,7 +164,7 @@ Completed,100
 Passed,95
 Failed,0
 Timeout,3
-Hung,1
+Hang,1
 Crash,1
 Pass Rate (%),95.0
 Total Time (s),3600.00
@@ -197,7 +197,7 @@ Avg Time per Group (s),36.00
 2025-12-12 10:00:20 - INFO - Case duration: 15.3s
 
 2025-12-12 10:00:20 - INFO - Progress: [█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/941 (0.1%)
-2025-12-12 10:00:20 - INFO - Results:  ✅ Passed: 1  ❌ Failed: 0  ⏱ Timeout: 0  💀 Hung: 0  💥 Crash: 0
+2025-12-12 10:00:20 - INFO - Results:  ✅ Passed: 1  ❌ Failed: 0  ⏱ Timeout: 0  💀 Hang: 0  💥 Crash: 0
 2025-12-12 10:00:20 - INFO - Time:     ⏱ Case: 15.3s  📊 Total: 15.3s
 ```
 
