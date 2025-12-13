@@ -36,7 +36,7 @@ def check_system_alive(
     """
     logger.info("Checking if system is alive with 'free' command...")
     serial_write(ser, "free\n")
-    found, _, _ = serial_wait_for_response(
+    found, _, _, _ = serial_wait_for_response(
         ser, "total", timeout, log_file, print_output
     )
     return found
