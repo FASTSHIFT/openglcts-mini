@@ -93,7 +93,7 @@ def serial_wait_for_response(
     timeout: float,
     log_file=None,
     print_output: bool = False,
-) -> Tuple[bool, bool, Optional[str]]:
+) -> Tuple[bool, bool, Optional[str], str]:
     """
     Wait for serial port to return response containing specified keyword
 
@@ -105,10 +105,11 @@ def serial_wait_for_response(
         print_output: Whether to print received data to console (default: False)
 
     Returns:
-        Tuple of (found, has_any_data, matched_keyword):
+        Tuple of (found, has_any_data, matched_keyword, buffer):
         - found: Whether keyword was found
         - has_any_data: Whether any data was received
         - matched_keyword: The matched keyword string or None
+        - buffer: All collected serial data
     """
     start_time = time.time()
     buffer = ""
@@ -142,12 +143,12 @@ def serial_wait_for_response(
 
                 for i, k in enumerate(keywords_lower):
                     if k in buffer.lower():
-                        return (True, has_any_data, keywords[i])
+                        return (True, has_any_data, keywords[i], buffer)
             except Exception as e:
                 logger.error(f"Read error: {e}")
         time.sleep(0.1)
 
-    return (False, has_any_data, None)
+    return (False, has_any_data, None, buffer)
 
 
 def collect_crash_log(

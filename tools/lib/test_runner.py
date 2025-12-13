@@ -86,14 +86,20 @@ def _wait_for_test_result(
     test_crashed = False
     test_result = "UNKNOWN"
 
+    # Accumulated buffer for checking fail patterns
+    accumulated_buffer = ""
+
     while wait_count < args.max_wait_count:
         logger.info(
             f"Waiting for test completion (free check count: {wait_count}/{args.max_wait_count})..."
         )
 
-        found, has_any_data, matched_keyword = serial_wait_for_response(
+        found, has_any_data, matched_keyword, buffer = serial_wait_for_response(
             ser, ["DONE!", "PANIC"], args.test_timeout, log_file, print_output
         )
+
+        # Accumulate buffer data for fail pattern checking
+        accumulated_buffer += buffer
 
         if found:
             if matched_keyword and "panic" in matched_keyword.lower():
@@ -104,11 +110,21 @@ def _wait_for_test_result(
                 test_crashed = True
                 test_result = "CRASH"
             else:
-                logger.info(f"Group {group_path} completed successfully.")
-                log_file.write(f"\n\n# Result: PASSED\n")
-                stats["passed"] += 1
-                test_completed = True
-                test_result = "PASSED"
+                # Check if there are any "Fail (" patterns in the accumulated buffer
+                if "Fail (" in accumulated_buffer:
+                    logger.warning(
+                        f"Group {group_path} completed with FAILURES detected."
+                    )
+                    log_file.write(f"\n\n# Result: FAILED (Fail pattern detected)\n")
+                    stats["failed"] += 1
+                    test_completed = True
+                    test_result = "FAILED"
+                else:
+                    logger.info(f"Group {group_path} completed successfully.")
+                    log_file.write(f"\n\n# Result: PASSED\n")
+                    stats["passed"] += 1
+                    test_completed = True
+                    test_result = "PASSED"
             break
 
         if has_any_data:
