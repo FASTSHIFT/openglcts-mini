@@ -180,10 +180,17 @@ def collect_crash_log(
     start_time = time.time()
     last_data_time = time.time()
     buffer = ""
+
+    # Use smaller sleep interval to avoid buffer overflow on high-speed serial
+    poll_interval = 0.01  # 10ms polling interval
+
     while True:
-        if ser.in_waiting > 0:
+        bytes_waiting = ser.in_waiting
+        if bytes_waiting > 0:
             try:
-                data = ser.read(ser.in_waiting).decode("utf-8", errors="ignore")
+                # Read all available data
+                raw_data = ser.read(bytes_waiting)
+                data = raw_data.decode("utf-8", errors="ignore")
                 buffer += data
                 last_data_time = time.time()
                 if print_output:
@@ -194,12 +201,17 @@ def collect_crash_log(
             except (OSError, IOError, UnicodeDecodeError) as e:
                 logger.error("Read error during crash log: %s", e)
         else:
-            time.sleep(0.1)
-        if time.time() - last_data_time > idle_timeout:
+            # Only sleep briefly when no data, to catch incoming data quickly
+            time.sleep(poll_interval)
+
+        # Check timeout conditions
+        current_time = time.time()
+        if current_time - last_data_time > idle_timeout:
             break
-        if time.time() - start_time > max_total:
+        if current_time - start_time > max_total:
             logger.warning(
                 "Crash log collection reached max_total=%ss, force stop.", max_total
             )
             break
+
     return buffer
