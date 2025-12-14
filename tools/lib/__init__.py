@@ -1,4 +1,5 @@
-# dEQP Auto Test Library
+"""dEQP Auto Test Library"""
+
 from .test_parser import TestCase, TestCaseParser
 from .serial_utils import (
     serial_open,

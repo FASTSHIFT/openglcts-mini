@@ -6,6 +6,8 @@ Utility Functions Module
 
 import logging
 
+from .test_models import ProgressInfo
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,15 +41,14 @@ def format_duration(seconds: float) -> str:
     """
     if seconds < 60:
         return f"{seconds:.1f}s"
-    elif seconds < 3600:
+    if seconds < 3600:
         minutes = int(seconds // 60)
         secs = seconds % 60
         return f"{minutes}m {secs:.1f}s"
-    else:
-        hours = int(seconds // 3600)
-        minutes = int((seconds % 3600) // 60)
-        secs = seconds % 60
-        return f"{hours}h {minutes}m {secs:.1f}s"
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = seconds % 60
+    return f"{hours}h {minutes}m {secs:.1f}s"
 
 
 def print_title_info(title: str) -> None:
@@ -57,47 +58,46 @@ def print_title_info(title: str) -> None:
     Args:
         title: Title string to print
     """
-    logger.info(f"{'=' * len(title)}")
+    logger.info("=" * len(title))
     logger.info(title)
-    logger.info(f"{'=' * len(title)}")
+    logger.info("=" * len(title))
 
 
-def print_progress(
-    current: int,
-    total: int,
-    passed: int,
-    failed: int,
-    timeout: int,
-    hang: int,
-    crash: int,
-    case_duration: float = 0,
-    total_duration: float = 0,
-) -> None:
+def print_progress(progress: ProgressInfo) -> None:
     """
     Print test progress summary with progress bar
 
     Args:
-        current: Current test index
-        total: Total number of tests
-        passed: Number of passed tests
-        failed: Number of failed tests
-        timeout: Number of timed out tests
-        hang: Number of hang tests
-        crash: Number of crashed tests
-        case_duration: Duration of current case in seconds
-        total_duration: Total elapsed time in seconds
+        progress: ProgressInfo object containing all progress data
     """
-    progress_pct = (current / total * 100) if total > 0 else 0
+    progress_pct = (
+        (progress.current / progress.total * 100) if progress.total > 0 else 0
+    )
     bar_width = 40
-    filled = int(bar_width * current / total) if total > 0 else 0
-    bar = "█" * filled + "░" * (bar_width - filled)
+    filled = (
+        int(bar_width * progress.current / progress.total) if progress.total > 0 else 0
+    )
+    progress_bar = "█" * filled + "░" * (bar_width - filled)
 
     logger.info("")
-    logger.info(f"Progress: [{bar}] {current}/{total} ({progress_pct:.1f}%)")
     logger.info(
-        f"Results:  ✅ Passed: {passed}  ❌ Failed: {failed}  ⏱ Timeout: {timeout}  💀 Hang: {hang}  💥 Crash: {crash}"
+        "Progress: [%s] %s/%s (%.1f%%)",
+        progress_bar,
+        progress.current,
+        progress.total,
+        progress_pct,
     )
     logger.info(
-        f"Time:     ⏱ Case: {format_duration(case_duration)}  📊 Total: {format_duration(total_duration)}"
+        "Results:  ✅ Passed: %s  ❌ Failed: %s  ⏱ Timeout: %s  💀 Hang: %s  💥 Crash: %s",
+        progress.stats.passed,
+        progress.stats.failed,
+        progress.stats.timeout,
+        progress.stats.hang,
+        progress.stats.crash,
+    )
+    logger.info(
+        "Time:     ⏱ Case: %s  📊 Total: %s",
+        format_duration(progress.case_duration),
+        format_duration(progress.total_duration),
     )
     logger.info("")

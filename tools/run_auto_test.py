@@ -33,9 +33,9 @@ def parse_xml_file(args) -> None:
         for path in test_parser.get_group_paths():
             logger.info(path)
     elif args.summary:
-        logger.info(f"Package: {test_parser.package_name}")
-        logger.info(f"Total Groups: {test_parser.total_groups}")
-        logger.info(f"Total Tests: {test_parser.total_tests}")
+        logger.info("Package: %s", test_parser.package_name)
+        logger.info("Total Groups: %s", test_parser.total_groups)
+        logger.info("Total Tests: %s", test_parser.total_tests)
     else:
         test_parser.print_structure(max_depth=args.depth)
 

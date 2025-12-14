@@ -4,9 +4,10 @@
 Device Control Module - Reset and system check functions
 """
 
-import serial
-import time
 import logging
+import time
+
+import serial
 
 from .serial_utils import (
     serial_open,
@@ -59,7 +60,9 @@ def reset_device(reset_port: str, reset_baudrate: int, reset_wait: float = 5) ->
 
     try:
         reset_ser = serial_open(reset_port, reset_baudrate)
-        logger.info(f"Reset port {reset_port} opened with baud rate {reset_baudrate}")
+        logger.info(
+            "Reset port %s opened with baud rate %s", reset_port, reset_baudrate
+        )
 
         # Send power on command: A0 01 01 A2
         power_on_cmd = bytes([0xA0, 0x01, 0x01, 0xA2])
@@ -75,15 +78,15 @@ def reset_device(reset_port: str, reset_baudrate: int, reset_wait: float = 5) ->
         logger.info("Reset command sent. Device should be restarting...")
 
         # Countdown display for waiting
-        logger.info(f"Waiting for device to boot... ({reset_wait}s)")
+        logger.info("Waiting for device to boot... (%ss)", reset_wait)
         remaining = int(reset_wait)
         while remaining > 0:
             print(f"\r  ⏳ Countdown: {remaining}s remaining...  ", end="", flush=True)
             time.sleep(1)
             remaining -= 1
-        print(f"\r  ✅ Device boot wait complete.            ", flush=True)
+        print("\r  ✅ Device boot wait complete.            ", flush=True)
 
     except serial.SerialException as e:
-        logger.error(f"Error opening reset port: {e}")
-    except Exception as e:
-        logger.error(f"Reset error: {e}")
+        logger.error("Error opening reset port: %s", e)
+    except (OSError, IOError) as e:
+        logger.exception("Reset error: %s", e)

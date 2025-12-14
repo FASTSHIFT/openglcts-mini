@@ -78,9 +78,9 @@ class TestCaseParser:
 
     def print_structure(self, max_depth: Optional[int] = None) -> None:
         """Print test case structure"""
-        logger.info(f"Package: {self.package_name}")
-        logger.info(f"Total Groups: {self.total_groups}")
-        logger.info(f"Total Tests: {self.total_tests}")
+        logger.info("Package: %s", self.package_name)
+        logger.info("Total Groups: %s", self.total_groups)
+        logger.info("Total Tests: %s", self.total_tests)
         logger.info("-" * 60)
 
         for case in self.root_cases:
@@ -93,7 +93,7 @@ class TestCaseParser:
 
         indent = "  " * depth
         type_indicator = "[G]" if case.is_group() else "[T]"
-        logger.info(f"{indent}{type_indicator} {case.name} ({case.case_type})")
+        logger.info("%s%s %s (%s)", indent, type_indicator, case.name, case.case_type)
 
         for child in case.children:
             self._print_case(child, depth + 1, max_depth)
@@ -127,7 +127,8 @@ class TestCaseParser:
             self._collect_group_paths(child, paths)
 
     def get_leaf_group_paths(self) -> List[str]:
-        """Get all leaf test group full paths (minimum test groups containing executable test cases)"""
+        """Get all leaf test group full paths
+        (minimum test groups containing executable test cases)"""
         paths = []
         for case in self.root_cases:
             self._collect_leaf_group_paths(case, paths)

@@ -4,11 +4,13 @@
 Serial Communication Utilities Module
 """
 
-import serial
-import time
 import collections.abc
 import logging
+import sys
+import time
 from typing import List, Optional, Tuple, Union
+
+import serial
 
 logger = logging.getLogger(__name__)
 
@@ -28,19 +30,22 @@ def serial_open(port: str, baudrate: int = 921600, timeout: float = 1) -> serial
     try:
         ser = serial.Serial(port, baudrate, timeout=timeout)
         if not ser.isOpen():
-            logger.error(f"Error opening serial port {port}.")
-            exit(1)
+            logger.error("Error opening serial port %s.", port)
+            sys.exit(1)
 
         logger.info(
-            f"Serial port {port} opened with baud rate {baudrate} and timeout {timeout} seconds"
+            "Serial port %s opened with baud rate %s and timeout %s seconds",
+            port,
+            baudrate,
+            timeout,
         )
         return ser
     except serial.SerialException as e:
-        logger.error(f"Error opening serial port: {e}")
-        exit(1)
-    except Exception as e:
-        logger.error(f"Other error: {e}")
-        exit(1)
+        logger.error("Error opening serial port: %s", e)
+        sys.exit(1)
+    except (OSError, IOError) as e:
+        logger.exception("System error opening serial port: %s", e)
+        sys.exit(1)
 
 
 def serial_write(ser: serial.Serial, command: str, sleep_duration: float = 0) -> None:
@@ -53,7 +58,7 @@ def serial_write(ser: serial.Serial, command: str, sleep_duration: float = 0) ->
         sleep_duration: Delay after sending, default 0
     """
     try:
-        logger.debug(f"Sending command: {command.strip()}")
+        logger.debug("Sending command: %s", command.strip())
 
         # Send the command to the serial port
         ser.write(command.encode())
@@ -62,11 +67,11 @@ def serial_write(ser: serial.Serial, command: str, sleep_duration: float = 0) ->
         time.sleep(sleep_duration)
 
     except serial.SerialException as e:
-        logger.error(f"Serial error: {e}")
+        logger.error("Serial error: %s", e)
 
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
-        exit(1)
+    except (OSError, IOError, UnicodeError) as e:
+        logger.exception("System error writing to serial port: %s", e)
+        sys.exit(1)
 
 
 def serial_write_hex(ser: serial.Serial, hex_data: bytes) -> None:
@@ -78,13 +83,13 @@ def serial_write_hex(ser: serial.Serial, hex_data: bytes) -> None:
         hex_data: Bytes data to send
     """
     try:
-        logger.debug(f"Sending hex data: {hex_data.hex().upper()}")
+        logger.debug("Sending hex data: %s", hex_data.hex().upper())
         ser.write(hex_data)
     except serial.SerialException as e:
-        logger.error(f"Serial error: {e}")
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
-        exit(1)
+        logger.error("Serial error: %s", e)
+    except (OSError, IOError) as e:
+        logger.exception("System error writing hex data to serial port: %s", e)
+        sys.exit(1)
 
 
 def serial_wait_for_response(
@@ -134,7 +139,7 @@ def serial_wait_for_response(
                 # Print serial data to console if enabled
                 if print_output:
                     print(data, end="", flush=True)
-                logger.debug(f"Received data: {repr(data)}")
+                logger.debug("Received data: %r", data)
 
                 # Write to log file if provided
                 if log_file:
@@ -144,8 +149,8 @@ def serial_wait_for_response(
                 for i, k in enumerate(keywords_lower):
                     if k in buffer.lower():
                         return (True, has_any_data, keywords[i], buffer)
-            except Exception as e:
-                logger.error(f"Read error: {e}")
+            except (OSError, IOError, UnicodeDecodeError) as e:
+                logger.error("Read error: %s", e)
         time.sleep(0.1)
 
     return (False, has_any_data, None, buffer)
@@ -186,15 +191,15 @@ def collect_crash_log(
                 if log_file:
                     log_file.write(data)
                     log_file.flush()
-            except Exception as e:
-                logger.error(f"Read error during crash log: {e}")
+            except (OSError, IOError, UnicodeDecodeError) as e:
+                logger.error("Read error during crash log: %s", e)
         else:
             time.sleep(0.1)
         if time.time() - last_data_time > idle_timeout:
             break
         if time.time() - start_time > max_total:
             logger.warning(
-                f"Crash log collection reached max_total={max_total}s, force stop."
+                "Crash log collection reached max_total=%ss, force stop.", max_total
             )
             break
     return buffer
