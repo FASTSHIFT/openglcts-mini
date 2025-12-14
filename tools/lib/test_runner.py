@@ -45,7 +45,6 @@ class FoundResultData:
 
     found_data: Any
     accumulated_buffer: str
-    ser: Any
     log_file: Any
     print_output: bool
     group_path: str
@@ -247,7 +246,6 @@ def _wait_for_test_result(
             result_data = FoundResultData(
                 found_data=found_data,
                 accumulated_buffer=accumulated_buffer,
-                ser=ser,
                 log_file=log_file,
                 print_output=print_output,
                 group_path=group_path,
