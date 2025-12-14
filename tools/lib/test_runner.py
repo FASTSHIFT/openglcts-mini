@@ -136,14 +136,22 @@ def _handle_crash(ser, log_file, print_output: bool) -> None:
     """
     Collect crash log after PANIC detected.
 
+    Wait for crash log to complete first, then add markers.
+    This prevents markers from being inserted in the middle of crash output.
+
     Args:
         ser: Serial port object
         log_file: Log file object
         print_output: Whether to print output to console
     """
-    log_file.write("\n# --- Begin Crash Log ---\n")
-    collect_crash_log(ser, log_file, print_output, idle_timeout=2.0, max_total=10.0)
-    log_file.write("\n# --- End Crash Log ---\n")
+    # First collect all crash log data (wait for output to stabilize)
+    crash_log = collect_crash_log(
+        ser, log_file, print_output, idle_timeout=2.0, max_total=10.0
+    )
+
+    # After crash log is complete, write the markers
+    log_file.write("\n\n# --- End of Crash Log ---\n")
+    log_file.write(f"# Crash log collected: {len(crash_log)} bytes\n")
 
 
 def _handle_found_result(result_data: FoundResultData):
@@ -163,8 +171,10 @@ def _handle_found_result(result_data: FoundResultData):
 
     if matched_keyword and "panic" in matched_keyword.lower():
         logger.error("Group %s CRASHED (PANIC detected)!", result_data.group_path)
-        result_data.log_file.write("\n\n# Result: CRASH (PANIC)\n")
+        # Don't write result marker here - wait for crash log to complete first
         _handle_crash(result_data.ser, result_data.log_file, result_data.print_output)
+        # Now write result marker after crash log is fully collected
+        result_data.log_file.write("\n# Result: CRASH (PANIC)\n")
         result_data.stats["crash"] += 1
         test_crashed = True
         test_result = "CRASH"
