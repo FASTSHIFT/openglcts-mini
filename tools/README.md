@@ -27,10 +27,33 @@ tools/
 - **CSV 报告**: 生成包含所有测试结果的 CSV 报告
 - **进度显示**: 实时显示测试进度、统计信息和时间
 
-## 📋 依赖要求
+## 📋 依赖要求和安装步骤
+
+### 安装依赖
+
+使用 requirements.txt 文件安装所有必需依赖：
 
 ```bash
-pip install pyserial
+# 安装核心依赖
+pip install -r requirements.txt
+
+# 或者手动安装
+pip install pyserial tabulate
+```
+
+### 开发工具（可选）
+
+如需进行代码格式化和检查，可安装开发工具：
+
+```bash
+# 代码格式化工具
+pip install black
+
+# 代码检查工具  
+pip install pylint
+
+# 运行代码检查
+python code_check.py
 ```
 
 ## 📖 使用方法

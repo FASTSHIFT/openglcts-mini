@@ -1,0 +1,12 @@
+# dEQP Auto Test Tools - Python Dependencies
+# This file lists the required Python packages for the tools
+
+# Serial communication library
+pyserial>=3.5
+
+# Table formatting library for summary display
+tabulate>=0.8.9
+
+# Development tools (optional, for code quality checks)
+# black>=22.3.0
+# pylint>=2.13.0
