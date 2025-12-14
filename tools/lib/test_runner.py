@@ -406,8 +406,6 @@ def _setup_test_environment(args):
     # Clear serial buffer
     ser.reset_input_buffer()
 
-    reset_device(args.reset_port, args.reset_baudrate, args.reset_wait)
-
     return log_dir, ser
 
 
@@ -570,6 +568,13 @@ def _run_single_group_test(config: TestConfig) -> None:
     Args:
         config: TestConfig object containing all test configuration data
     """
+    # Restart system make sure it is ready for test execution
+    reset_device(
+        config.environment.args.reset_port,
+        config.environment.args.reset_baudrate,
+        config.environment.args.reset_wait,
+    )
+
     # Record case start time
     case_start_time = time.time()
     case_start_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -646,13 +651,6 @@ def _run_single_group_test(config: TestConfig) -> None:
         total_duration=total_duration,
     )
     print_progress(progress)
-
-    # Restart system regardless of success or failure
-    reset_device(
-        config.environment.args.reset_port,
-        config.environment.args.reset_baudrate,
-        config.environment.args.reset_wait,
-    )
 
 
 def _write_final_summary(summary: FinalSummary) -> None:
