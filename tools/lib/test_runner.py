@@ -722,12 +722,10 @@ def _write_final_summary(summary: FinalSummary) -> None:
     logger.info("Test report saved to: %s", summary.csv_filepath)
 
     # Print final summary
-    logger.info("")
+    print_title_info("|| FINAL TEST SUMMARY ||")
 
-    # Create table data for summary with title integrated
+    # Content table data
     table_data = [
-        ["FINAL TEST SUMMARY", "", "", ""],  # Title row
-        ["", "", "", ""],  # Empty row for spacing
         ["📊 Total Groups", f"{summary.total_groups:,}", "", ""],
         ["  └─ Skipped", f"{summary.skipped_groups:,}", "", ""],
         ["  └─ To Test", f"{summary.total_to_test:,}", "", ""],
@@ -796,7 +794,7 @@ def _write_final_summary(summary: FinalSummary) -> None:
         ["📄 Report File", summary.csv_filepath, "", ""],
     ]
 
-    # Create the table with grid format - tabulate will handle the borders automatically
+    # Create the content table with grid format
     table = tabulate(table_data, tablefmt="grid", stralign="left")
 
     # Print the complete table (title and content are now integrated)
