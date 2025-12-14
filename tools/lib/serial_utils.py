@@ -92,6 +92,74 @@ def serial_write_hex(ser: serial.Serial, hex_data: bytes) -> None:
         sys.exit(1)
 
 
+def serial_collect_until_idle(
+    ser: serial.Serial,
+    max_timeout: float,
+    idle_timeout: float = 0.5,
+) -> Tuple[bool, str]:
+    """
+    Collect serial data until no new data for idle_timeout seconds
+    or max_timeout is reached.
+
+    Args:
+        ser: Serial port object
+        max_timeout: Maximum total time to wait
+        idle_timeout: Time with no data before considering transmission complete
+
+    Returns:
+        Tuple of (has_any_data, buffer)
+    """
+    start_time = time.time()
+    last_data_time = start_time
+    buffer = ""
+    has_any_data = False
+    poll_interval = 0.01  # 10ms polling interval
+
+    while True:
+        current_time = time.time()
+
+        # Check max timeout
+        if current_time - start_time >= max_timeout:
+            break
+
+        bytes_waiting = ser.in_waiting
+        if bytes_waiting > 0:
+            try:
+                raw_data = ser.read(bytes_waiting)
+                data = raw_data.decode("utf-8", errors="ignore")
+                buffer += data
+                has_any_data = True
+                last_data_time = current_time
+            except (OSError, IOError, UnicodeDecodeError) as e:
+                logger.error("Read error: %s", e)
+        else:
+            time.sleep(poll_interval)
+
+        # Check idle timeout (only after receiving some data)
+        if has_any_data and (current_time - last_data_time >= idle_timeout):
+            break
+
+    return (has_any_data, buffer)
+
+
+def scan_keywords(buffer: str, keywords: List[str]) -> Optional[str]:
+    """
+    Scan buffer for keywords (case-insensitive).
+
+    Args:
+        buffer: Data buffer to scan
+        keywords: List of keywords to search for
+
+    Returns:
+        Matched keyword or None
+    """
+    buffer_lower = buffer.lower()
+    for keyword in keywords:
+        if keyword.lower() in buffer_lower:
+            return keyword
+    return None
+
+
 def serial_wait_for_response(
     ser: serial.Serial,
     keyword: Union[str, List[str]],
@@ -100,14 +168,21 @@ def serial_wait_for_response(
     print_output: bool = False,
 ) -> Tuple[bool, bool, Optional[str], str]:
     """
-    Wait for serial port to return response containing specified keyword
+    Wait for serial response, collect data until idle, then check for keywords.
+
+    Data collection continues until:
+    1. No new data received for idle_timeout seconds (transmission complete)
+    2. Or max timeout is reached
+
+    After collection, scan the buffer for keywords.
 
     Args:
         ser: Serial port object
         keyword: Single keyword string or list of keywords to match
-        timeout: Timeout in seconds
+        timeout: Maximum timeout in seconds
         log_file: File object to write serial data (optional)
-        print_output: Whether to print received data to console (default: False)
+        print_output: Whether to print received data to console
+        idle_timeout: Time with no new data before considering transmission complete
 
     Returns:
         Tuple of (found, has_any_data, matched_keyword, buffer):
@@ -116,11 +191,7 @@ def serial_wait_for_response(
         - matched_keyword: The matched keyword string or None
         - buffer: All collected serial data
     """
-    start_time = time.time()
-    buffer = ""
-    has_any_data = False
-
-    # Support single string or string array
+    # Normalize keywords
     if isinstance(keyword, str):
         keywords = [keyword]
     elif isinstance(keyword, collections.abc.Iterable):
@@ -128,32 +199,21 @@ def serial_wait_for_response(
     else:
         raise ValueError("keyword must be str or list of str")
 
-    keywords_lower = [k.lower() for k in keywords]
+    # Collect data until idle
+    has_any_data, buffer = serial_collect_until_idle(ser, timeout)
 
-    while time.time() - start_time < timeout:
-        if ser.in_waiting > 0:
-            try:
-                data = ser.read(ser.in_waiting).decode("utf-8", errors="ignore")
-                buffer += data
-                has_any_data = True
-                # Print serial data to console if enabled
-                if print_output:
-                    print(data, end="", flush=True)
-                logger.debug("Received data: %r", data)
+    # Output to console and log file
+    if buffer:
+        if print_output:
+            print(buffer, end="", flush=True)
+        if log_file:
+            log_file.write(buffer)
+            log_file.flush()
 
-                # Write to log file if provided
-                if log_file:
-                    log_file.write(data)
-                    log_file.flush()
+    # Scan for keywords after data collection is complete
+    matched = scan_keywords(buffer, keywords)
 
-                for i, k in enumerate(keywords_lower):
-                    if k in buffer.lower():
-                        return (True, has_any_data, keywords[i], buffer)
-            except (OSError, IOError, UnicodeDecodeError) as e:
-                logger.error("Read error: %s", e)
-        time.sleep(0.1)
-
-    return (False, has_any_data, None, buffer)
+    return (matched is not None, has_any_data, matched, buffer)
 
 
 def collect_crash_log(
@@ -177,41 +237,14 @@ def collect_crash_log(
     Returns:
         Collected log string
     """
-    start_time = time.time()
-    last_data_time = time.time()
-    buffer = ""
+    _, buffer = serial_collect_until_idle(ser, max_total, idle_timeout)
 
-    # Use smaller sleep interval to avoid buffer overflow on high-speed serial
-    poll_interval = 0.01  # 10ms polling interval
-
-    while True:
-        bytes_waiting = ser.in_waiting
-        if bytes_waiting > 0:
-            try:
-                # Read all available data
-                raw_data = ser.read(bytes_waiting)
-                data = raw_data.decode("utf-8", errors="ignore")
-                buffer += data
-                last_data_time = time.time()
-                if print_output:
-                    print(data, end="", flush=True)
-                if log_file:
-                    log_file.write(data)
-                    log_file.flush()
-            except (OSError, IOError, UnicodeDecodeError) as e:
-                logger.error("Read error during crash log: %s", e)
-        else:
-            # Only sleep briefly when no data, to catch incoming data quickly
-            time.sleep(poll_interval)
-
-        # Check timeout conditions
-        current_time = time.time()
-        if current_time - last_data_time > idle_timeout:
-            break
-        if current_time - start_time > max_total:
-            logger.warning(
-                "Crash log collection reached max_total=%ss, force stop.", max_total
-            )
-            break
+    # Output to console and log file
+    if buffer:
+        if print_output:
+            print(buffer, end="", flush=True)
+        if log_file:
+            log_file.write(buffer)
+            log_file.flush()
 
     return buffer
