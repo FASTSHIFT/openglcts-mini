@@ -8,9 +8,16 @@ import os
 import csv
 import time
 import logging
+import sys
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict
+
+try:
+    from tabulate import tabulate
+except ImportError:
+    print("Please install 'tabulate' package: pip install tabulate")
+    sys.exit(1)
 
 from .test_parser import TestCaseParser
 from .serial_utils import (
@@ -716,26 +723,82 @@ def _write_final_summary(summary: FinalSummary) -> None:
 
     # Print final summary
     logger.info("")
-    logger.info("=" * 60)
-    logger.info("FINAL TEST SUMMARY")
-    logger.info("=" * 60)
-    logger.info(
-        "Total Groups:  %s (skipped: %s, to test: %s)",
-        summary.total_groups,
-        summary.skipped_groups,
-        summary.total_to_test,
-    )
-    logger.info("Completed:     %s", completed)
-    logger.info("✅ Passed:     %s", summary.stats["passed"])
-    logger.info("❌ Failed:     %s", summary.stats["failed"])
-    logger.info("⏱ Timeout:    %s", summary.stats["timeout"])
-    logger.info("💀 Hang:       %s", summary.stats["hang"])
-    logger.info("💥 Crash:      %s", summary.stats["crash"])
-    if summary.total_to_test > 0:
-        logger.info("Pass Rate:     %.1f%%", pass_rate)
-    logger.info("")
-    logger.info("⏱ Total Time: %s", format_duration(final_total_duration))
-    if completed > 0:
-        logger.info("📊 Avg Time:   %s per group", format_duration(avg_time))
-    logger.info("=" * 60)
-    logger.info("📄 Report:     %s", summary.csv_filepath)
+
+    # Create table data for summary with title integrated
+    table_data = [
+        ["FINAL TEST SUMMARY", "", "", ""],  # Title row
+        ["", "", "", ""],  # Empty row for spacing
+        ["📊 Total Groups", f"{summary.total_groups:,}", "", ""],
+        ["  └─ Skipped", f"{summary.skipped_groups:,}", "", ""],
+        ["  └─ To Test", f"{summary.total_to_test:,}", "", ""],
+        ["✅ Completed", f"{completed:,}", "", ""],
+        ["", "", "", ""],
+        ["📈 Test Results", "Count", "Percentage", "Status"],
+        [
+            "✅ Passed",
+            f"{summary.stats['passed']:,}",
+            (
+                f"{summary.stats['passed']/completed*100:.1f}%"
+                if completed > 0
+                else "0.0%"
+            ),
+            "🟢" if summary.stats["passed"] > 0 else "⚪",
+        ],
+        [
+            "❌ Failed",
+            f"{summary.stats['failed']:,}",
+            (
+                f"{summary.stats['failed']/completed*100:.1f}%"
+                if completed > 0
+                else "0.0%"
+            ),
+            "🔴" if summary.stats["failed"] > 0 else "⚪",
+        ],
+        [
+            "⏱ Timeout",
+            f"{summary.stats['timeout']:,}",
+            (
+                f"{summary.stats['timeout']/completed*100:.1f}%"
+                if completed > 0
+                else "0.0%"
+            ),
+            "🟡" if summary.stats["timeout"] > 0 else "⚪",
+        ],
+        [
+            "💀 Hang",
+            f"{summary.stats['hang']:,}",
+            (
+                f"{summary.stats['hang']/completed*100:.1f}%"
+                if completed > 0
+                else "0.0%"
+            ),
+            "🔴" if summary.stats["hang"] > 0 else "⚪",
+        ],
+        [
+            "💥 Crash",
+            f"{summary.stats['crash']:,}",
+            (
+                f"{summary.stats['crash']/completed*100:.1f}%"
+                if completed > 0
+                else "0.0%"
+            ),
+            "🔴" if summary.stats["crash"] > 0 else "⚪",
+        ],
+        ["", "", "", ""],
+        ["⏱ Total Time", format_duration(final_total_duration), "", ""],
+        [
+            "📊 Avg Time",
+            f"{format_duration(avg_time)}/group" if completed > 0 else "N/A",
+            "",
+            "",
+        ],
+        ["", "", "", ""],
+        ["📄 Report File", summary.csv_filepath, "", ""],
+    ]
+
+    # Create the table with grid format - tabulate will handle the borders automatically
+    table = tabulate(table_data, tablefmt="grid", stralign="left")
+
+    # Print the complete table (title and content are now integrated)
+    for line in table.split("\n"):
+        logger.info(line)
