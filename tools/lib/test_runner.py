@@ -24,7 +24,6 @@ from .serial_utils import (
     serial_open,
     serial_write,
     serial_wait_for_response,
-    collect_crash_log,
 )
 from .device_control import check_system_alive, reset_device
 from .utils import format_duration, print_title_info, print_progress
@@ -139,28 +138,6 @@ def build_test_command(group_path: str) -> str:
     return cmd
 
 
-def _handle_crash(ser, log_file, print_output: bool) -> None:
-    """
-    Collect crash log after PANIC detected.
-
-    Wait for crash log to complete first, then add markers.
-    This prevents markers from being inserted in the middle of crash output.
-
-    Args:
-        ser: Serial port object
-        log_file: Log file object
-        print_output: Whether to print output to console
-    """
-    # First collect all crash log data (wait for output to stabilize)
-    crash_log = collect_crash_log(
-        ser, log_file, print_output, idle_timeout=2.0, max_total=10.0
-    )
-
-    # After crash log is complete, write the markers
-    log_file.write("\n\n# --- End of Crash Log ---\n")
-    log_file.write(f"# Crash log collected: {len(crash_log)} bytes\n")
-
-
 def _handle_found_result(result_data: FoundResultData):
     """
     Handle the case when test result is found.
@@ -178,8 +155,7 @@ def _handle_found_result(result_data: FoundResultData):
 
     if matched_keyword and "panic" in matched_keyword.lower():
         logger.error("Group %s CRASHED (PANIC detected)!", result_data.group_path)
-        # Don't write result marker here - wait for crash log to complete first
-        _handle_crash(result_data.ser, result_data.log_file, result_data.print_output)
+
         # Now write result marker after crash log is fully collected
         result_data.log_file.write("\n# Result: CRASH (PANIC)\n")
         result_data.stats["crash"] += 1

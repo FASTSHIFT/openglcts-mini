@@ -214,37 +214,3 @@ def serial_wait_for_response(
     matched = scan_keywords(buffer, keywords)
 
     return (matched is not None, has_any_data, matched, buffer)
-
-
-def collect_crash_log(
-    ser: serial.Serial,
-    log_file=None,
-    print_output: bool = False,
-    idle_timeout: float = 2.0,
-    max_total: float = 10.0,
-) -> str:
-    """
-    Keep collecting serial log until no new data for idle_timeout seconds or
-    total time exceeds max_total seconds.
-
-    Args:
-        ser: Serial port object
-        log_file: File object to write serial data (optional)
-        print_output: Whether to print received data to console (default: False)
-        idle_timeout: Seconds to wait with no new data before stopping
-        max_total: Maximum total seconds to collect
-
-    Returns:
-        Collected log string
-    """
-    _, buffer = serial_collect_until_idle(ser, max_total, idle_timeout)
-
-    # Output to console and log file
-    if buffer:
-        if print_output:
-            print(buffer, end="", flush=True)
-        if log_file:
-            log_file.write(buffer)
-            log_file.flush()
-
-    return buffer
