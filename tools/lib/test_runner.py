@@ -230,7 +230,6 @@ def _wait_for_test_result(
     Returns:
         Test result string: "PASSED", "CRASH", "HANG", or "TIMEOUT"
     """
-    print_output = getattr(args, "print_output", False)
     wait_count = 0
     test_completed = False
     test_crashed = False
@@ -249,7 +248,7 @@ def _wait_for_test_result(
             ["DONE!", "PANIC", "exception"],
             args.test_timeout,
             log_file,
-            print_output,
+            args.print_output,
         )
         accumulated_buffer += found_data[3]  # buffer
 
@@ -258,7 +257,7 @@ def _wait_for_test_result(
                 found_data=found_data,
                 accumulated_buffer=accumulated_buffer,
                 log_file=log_file,
-                print_output=print_output,
+                print_output=args.print_output,
                 group_path=group_path,
                 stats=stats,
             )
@@ -275,7 +274,7 @@ def _wait_for_test_result(
             continue
 
         wait_count += 1
-        if _check_system_status(ser, args, log_file, print_output, wait_count):
+        if _check_system_status(ser, args, log_file, args.print_output, wait_count):
             continue
 
         logger.error("System is not responding! Breaking wait loop.")
