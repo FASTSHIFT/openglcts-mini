@@ -268,6 +268,7 @@ def _wait_for_test_result(
             break
 
         if found_data[1]:  # has_any_data
+            wait_count = 0  # Reset wait count if any data received
             logger.info(
                 "Received data during wait, system is alive. Continuing to wait..."
             )
