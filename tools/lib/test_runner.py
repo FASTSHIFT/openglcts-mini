@@ -772,7 +772,7 @@ def _write_final_summary(summary: FinalSummary) -> None:
             "🔴" if summary.stats["crash"] > 0 else "⚪",
         ],
         [
-            "⚠️ Exception",
+            "🔶 Exception",
             f"{summary.stats['exception']:,}",
             (
                 f"{summary.stats['exception']/completed*100:.1f}%"

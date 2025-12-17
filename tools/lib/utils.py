@@ -90,7 +90,7 @@ def print_progress(progress: ProgressInfo) -> None:
     logger.info(
         "Results:"
         "  ✅ Passed: %s  ❌ Failed: %s  ⏱ Timeout: %s"
-        "  💀 Hang: %s  💥 Crash: %s  ⚠️ Exception: %s",
+        "  💀 Hang: %s  💥 Crash: %s  🔶 Exception: %s",
         progress.stats.passed,
         progress.stats.failed,
         progress.stats.timeout,
