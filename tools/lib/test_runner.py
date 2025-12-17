@@ -199,7 +199,7 @@ def _check_system_status(ser, args, log_file, print_output, wait_count):
         wait_count: Current wait count
 
     Returns:
-        Tuple of (system_alive, should_continue)
+        True if system alive and should continue to wait, False otherwise
     """
     logger.warning(
         "No data received within %ss, checking system status (attempt %s/%s)...",
@@ -210,8 +210,8 @@ def _check_system_status(ser, args, log_file, print_output, wait_count):
     system_alive = check_system_alive(ser, args.test_timeout, log_file, print_output)
     if system_alive:
         logger.info("System is still alive (free responded). Continuing to wait...")
-        return True, True
-    return False, False
+
+    return system_alive
 
 
 def _wait_for_test_result(
@@ -275,10 +275,7 @@ def _wait_for_test_result(
             continue
 
         wait_count += 1
-        _, should_continue = _check_system_status(
-            ser, args, log_file, print_output, wait_count
-        )
-        if should_continue:
+        if _check_system_status(ser, args, log_file, print_output, wait_count):
             continue
 
         logger.error("System is not responding! Breaking wait loop.")
