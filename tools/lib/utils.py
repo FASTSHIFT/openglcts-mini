@@ -88,12 +88,15 @@ def print_progress(progress: ProgressInfo) -> None:
         progress_pct,
     )
     logger.info(
-        "Results:  ✅ Passed: %s  ❌ Failed: %s  ⏱ Timeout: %s  💀 Hang: %s  💥 Crash: %s",
+        "Results:"
+        "  ✅ Passed: %s  ❌ Failed: %s  ⏱ Timeout: %s"
+        "  💀 Hang: %s  💥 Crash: %s  ⚠️ Exception: %s",
         progress.stats.passed,
         progress.stats.failed,
         progress.stats.timeout,
         progress.stats.hang,
         progress.stats.crash,
+        progress.stats.exception,
     )
     logger.info(
         "Time:     ⏱ Case: %s  📊 Total: %s",

@@ -17,10 +17,18 @@ class TestStats:
     timeout: int = 0
     hang: int = 0
     crash: int = 0
+    exception: int = 0
 
     def total_completed(self) -> int:
         """Calculate total completed tests"""
-        return self.passed + self.failed + self.timeout + self.hang + self.crash
+        return (
+            self.passed
+            + self.failed
+            + self.timeout
+            + self.hang
+            + self.crash
+            + self.exception
+        )
 
 
 @dataclass
@@ -97,6 +105,7 @@ class ProgressStats:
     timeout: int
     hang: int
     crash: int
+    exception: int
 
 
 @dataclass

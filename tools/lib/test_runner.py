@@ -160,6 +160,13 @@ def _handle_found_result(result_data: FoundResultData):
         result_data.stats["crash"] += 1
         test_crashed = True
         test_result = "CRASH"
+    elif matched_keyword and "exception" in matched_keyword.lower():
+        logger.error("Group %s EXCEPTION detected!", result_data.group_path)
+
+        result_data.log_file.write("\n# Result: EXCEPTION\n")
+        result_data.stats["exception"] += 1
+        test_crashed = True
+        test_result = "EXCEPTION"
     else:
         # Check if there are any "Fail (" patterns in the accumulated buffer
         if "Fail (" in result_data.accumulated_buffer:
@@ -238,7 +245,11 @@ def _wait_for_test_result(
         )
 
         found_data = serial_wait_for_response(
-            ser, ["DONE!", "PANIC"], args.test_timeout, log_file, print_output
+            ser,
+            ["DONE!", "PANIC", "exception"],
+            args.test_timeout,
+            log_file,
+            print_output,
         )
         accumulated_buffer += found_data[3]  # buffer
 
@@ -417,6 +428,7 @@ def _initialize_test_stats(groups_to_test):
         "timeout": 0,
         "hang": 0,
         "crash": 0,
+        "exception": 0,
     }
 
     # Total time tracking
@@ -633,6 +645,7 @@ def _run_single_group_test(config: TestConfig) -> None:
         timeout=config.environment.stats["timeout"],
         hang=config.environment.stats["hang"],
         crash=config.environment.stats["crash"],
+        exception=config.environment.stats["exception"],
     )
     progress = ProgressInfo(
         current=config.index_info.idx,
@@ -667,6 +680,7 @@ def _write_final_summary(summary: FinalSummary) -> None:
         + summary.stats["timeout"]
         + summary.stats["hang"]
         + summary.stats["crash"]
+        + summary.stats["exception"]
     )
 
     summary.files.csv_writer.writerow(["Completed", completed])
@@ -675,6 +689,7 @@ def _write_final_summary(summary: FinalSummary) -> None:
     summary.files.csv_writer.writerow(["Timeout", summary.stats["timeout"]])
     summary.files.csv_writer.writerow(["Hang", summary.stats["hang"]])
     summary.files.csv_writer.writerow(["Crash", summary.stats["crash"]])
+    summary.files.csv_writer.writerow(["Exception", summary.stats["exception"]])
 
     pass_rate = 0.0
     if summary.total_to_test > 0:
@@ -755,6 +770,16 @@ def _write_final_summary(summary: FinalSummary) -> None:
                 else "0.0%"
             ),
             "🔴" if summary.stats["crash"] > 0 else "⚪",
+        ],
+        [
+            "⚠️ Exception",
+            f"{summary.stats['exception']:,}",
+            (
+                f"{summary.stats['exception']/completed*100:.1f}%"
+                if completed > 0
+                else "0.0%"
+            ),
+            "🟠" if summary.stats["exception"] > 0 else "⚪",
         ],
         ["", "", "", ""],
         ["⏱ Total Time", format_duration(final_total_duration), "", ""],
